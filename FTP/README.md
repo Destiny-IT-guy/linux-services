@@ -105,4 +105,82 @@ to check all ftp command in ftp use ? or help while your in the ftp server but h
 | mput    | Upload multiple files |
 
 ## FTPS 
-i will finish this part after my uni exam if i remember.
+To start let create a ssl certificate for oure server use the following command
+```
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout vsftpd.key -out vsftpd.crt
+```
+This will force you to enter information about your certificate you can use option whil entering the previouse command to skip this part
+
+move both files to /etc/ssl/private/
+```
+mv vsftpd.key /etc/ssl/private
+mv vsftpd.crt /etc/ssl/private
+```
+Now add the following lines in your vsftpd.conf file
+
+```
+rsa_cert_file=/etc/ssl/private/vsftpd.crt
+rsa_private_key_file=/etc/ssl/private/vsftpd.key
+ssl_enable=YES
+force_local_logins_ssl=YES
+force_local_data_ssl=YES
+ssl_tlsv1=YES
+ssl_sslv2=NO
+ssl_sslv3=NO
+require_ssl_reuse=NO
+ssl_ciphers=HIGH
+allow_anon_ssl=NO
+implicit_ssl=YES
+listen_port=990
+```
+
+to enable ftp and ftps at the same time remove implict ssl=yes and list_port 990. also change both force ssl to =NO
+
+## filezillas
+The easiest way to use ftps if with filezilla. You can download it by it official site or with wget but with ubuntu there is quicker way. enter the follwing command to install filezilla and the last one to start the app.
+```
+sudo apt install filezilla -y
+filezilla
+```
+You should see something like this 
+![My Photo](photo/filezillainitial.png)
+
+Go to File site manager and click new site and you should see something like this 
+![photo 2](photo/filezilas%20sites.png)
+
+Here you enter your information Host IP select implicit FTP over TLS and your user credential than you click on collect.<br><b>Remark</b> If you didn't add implicit_ssl in yor server configuraiton file you will have to enter the port of the server 990 and select Require or explicit FTP over TLS if available.
+
+![photo 3](photo/filezilaencryptionoption.png)
+
+After all of that you will be able to see your local folder on the left and ftp server folder on the right
+
+![photo 4](photo/filezilas%20end1.png)
+
+## lftp
+FTP command doent work well when ftps is configured so we have to use another tool. There are probably better tools that exist but i will show you how to use lftp. First of all you need to install lftp on your system. After use the following command to connect to the server 
+```
+lftp ftps://<IP ADDRESS>:<port>
+lftp <IP ADDRESS>:~> set ftp:ssl-force true
+lftp <IP ADDRESS>:~> set ssl:verify-certificate no
+lftp <IP ADDRESS>:~> set ftp:ssl-protect-data true
+lftp <IP ADDRESS>:~> login username
+password:
+lftp <IP ADDRESS:~> ls 
+```
+You can also do the following command to do everything in one large command
+
+```
+lftp -e 'set ftp:ssl-force true; set ssl:verify-certificate no; set ftp:ssl-protect-data true' ftps://<username>@192.168.2.141
+or
+lftp -e 'set ftp:ssl-force true; set ssl:verify-certificate no; set ftp:ssl-protect-data true' ftps://192.168.2.141
+```
+
+If you didnt configure implicit ssl you will have to enter: `<port>` after the ip address.
+
+This is what it will look like
+
+![photo lftp1](photo/lftp1.png)
+
+lastly most lftp commands are very similar to ftp command. If you don't know a command just enter ? to check what it does
+
+![photo lftp](photo/lftphelp.png)
