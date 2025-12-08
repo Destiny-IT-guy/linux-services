@@ -8,7 +8,7 @@ vsftpd is a lightweight ftp server on linux. It allows us to configure FTP and F
 sudo apt install vsftpd
 ```
 Now we will go in the configuraiton files and make sure all the following lines appear in /etc/vsftpd.conf
-```
+```bash
 sudo vim /etc/conf
 anonymous_enable=NO
 listen=Yes
@@ -35,7 +35,7 @@ so i also recommend you add these option in te vsftpd.conf file.<br>
 `pasv_address=<IP Adresse>` This command will tell the client what ip to connect to use when using passive mode. this is usefull when the ftp server is behind nat.<br><br> Example, let say my router forward its port 11112 to my ftp server port 21 for control channel and passive mode uses port 30000 to 50000. In this set the client will connect to the public ip port 11112 for ftp commands and for each file transfer between client and server client will connect to public IP 30000 to 50000 which the router forward to the same ports on the ftp server.
 
 The following would be a complete basic vsftpd.conf file
-```
+```bash
 anonymous_enable=NO
 listen=Yes
 listen_ipv6=no
@@ -64,7 +64,7 @@ after saving your modification restard the vsftpd service with `sudo systemctl r
 ## User and folder creation
 I will do a script after to check every user on the system and crate a ftp folder of it isn't already made but now i will show it how to do it manually.
 
-```
+```bash
 sudo useradd test
 passwd test
 
@@ -106,19 +106,19 @@ to check all ftp command in ftp use ? or help while your in the ftp server but h
 
 ## FTPS 
 To start let create a ssl certificate for oure server use the following command
-```
+```bash
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout vsftpd.key -out vsftpd.crt
 ```
 This will force you to enter information about your certificate you can use option whil entering the previouse command to skip this part
 
 move both files to /etc/ssl/private/
-```
+```bash
 mv vsftpd.key /etc/ssl/private
 mv vsftpd.crt /etc/ssl/private
 ```
 Now add the following lines in your vsftpd.conf file
 
-```
+```bash
 rsa_cert_file=/etc/ssl/private/vsftpd.crt
 rsa_private_key_file=/etc/ssl/private/vsftpd.key
 ssl_enable=YES
@@ -138,7 +138,7 @@ to enable ftp and ftps at the same time remove implict ssl=yes and list_port 990
 
 ## filezillas
 The easiest way to use ftps if with filezilla. You can download it by it official site or with wget but with ubuntu there is quicker way. enter the follwing command to install filezilla and the last one to start the app.
-```
+```bash
 sudo apt install filezilla -y
 filezilla
 ```
@@ -158,7 +158,7 @@ After all of that you will be able to see your local folder on the left and ftp 
 
 ## lftp
 FTP command doent work well when ftps is configured so we have to use another tool. There are probably better tools that exist but i will show you how to use lftp. First of all you need to install lftp on your system. After use the following command to connect to the server 
-```
+```bash
 lftp ftps://<IP ADDRESS>:<port>
 lftp <IP ADDRESS>:~> set ftp:ssl-force true
 lftp <IP ADDRESS>:~> set ssl:verify-certificate no
