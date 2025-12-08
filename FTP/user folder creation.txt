@@ -1,0 +1,83 @@
+#!/bin/bash
+
+check_success() {
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Previous command failed. Exiting."
+        exit 1
+    fi
+}
+
+FTP_BASE_DIR="/home/FTP"
+if [ -d "$FTP_BASE_DIR" ]; then
+    echo "Folder $FTP_BASE_DIR exist"
+else
+    echo "Folder $FTP_BASE_DIR doesn't exist"
+    sudo mkdir -p "$FTP_BASE_DIR"
+    if [ $? -eq 0 ]; then
+        echo "Folder creation successful"
+    else
+        echo "Folder creation failed."
+        exit 1
+    fi
+fi
+
+if [ "$(stat -c %U "$FTP_BASE_DIR")" != "root" ] || [ "$(stat -c %a "$FTP_BASE_DIR")" != "755" ]; then
+    
+    echo "Owner or permission of folder is incorrect"
+    echo "Changing owner and permission"
+    
+    sudo chown root:root "$FTP_BASE_DIR"
+    check_success 
+    
+    sudo chmod 755 "$FTP_BASE_DIR"
+    check_success
+
+else
+    echo "Owner and permission of folder is correct"
+fi
+
+echo "_________________________"
+# NOTE: The variable FTP_USER="/home/FTP/"$username is not needed inside the loop.
+
+for USERNAME in $(awk -F: '{ if ($3 >= 1000 && $1 != "root" && $1 != "nobody") print $1 }' /etc/passwd); do
+
+    USER_FTP_ROOT="/home/FTP/$USERNAME"
+    USER_UPLOAD_DIR="$USER_FTP_ROOT/action"
+    
+    echo "checking user" $USERNAME
+
+    if [ -d "$USER_FTP_ROOT" ]; then
+        echo "  - User directory $USER_FTP_ROOT already exists."
+    else
+        echo "  - Creating user directory $USER_FTP_ROOT..."
+        sudo mkdir -p "$USER_FTP_ROOT"
+        check_success
+    fi
+
+    
+    echo "  - Setting secure permissions on $USER_FTP_ROOT (root:$USERNAME 750)..."
+    sudo chown root:"$USERNAME" "$USER_FTP_ROOT"
+    check_success
+    sudo chmod 750 "$USER_FTP_ROOT"
+    check_success
+
+
+    if [ -d "$USER_UPLOAD_DIR" ]; then
+        echo "  - Upload directory $USER_UPLOAD_DIR already exists."
+    else
+        echo "  - Creating upload directory $USER_UPLOAD_DIR..."
+        sudo mkdir -p "$USER_UPLOAD_DIR"
+        check_success
+    fi
+    
+    
+    echo "  - Setting writable permissions on $USER_UPLOAD_DIR ($USERNAME:$USERNAME 700)..."
+    sudo chown "$USERNAME":"$USERNAME" "$USER_UPLOAD_DIR"
+    check_success
+    sudo chmod 700 "$USER_UPLOAD_DIR"
+    check_success
+
+    echo "Finished configuration for $USERNAME."
+    echo "-----------------------------------"
+
+done
