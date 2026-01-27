@@ -271,3 +271,72 @@ nslookup -type=ptr 192.168.2.233 192.168.2.232
 
 ### Dig
 
+dig is a powerfu tool used to inspect dns server. IT can be seems as a better version of `nslookup`. If you don't have it on your system use the following command to install it.
+
+```bash
+sudo apt install dnsutils
+```
+
+The dig syntax i the following.
+
+```bash
+dig [server] [name] [type]
+```
+
+To query domain A record.
+
+```bash
+dig victim.net
+```
+
+To reduce output of the query use the `+short`.
+
+```bash
+dig victim.net +short
+```
+
+To reduce comment lines you can add the `+nocomments`
+
+```bash
+dig victim.net +nocomments
+```
+
+To query a specific server use the following command.
+
+```bash
+dig @192.168.2.231 victim.net
+dig @192.168.2.232 victim.net
+```
+
+To query only the answer section use the following.
+
+```bash
+dig victim.net +noall +answer
+```
+
+To query a specific record type add the record prefix at the end.
+
+```bash
+dig dns2.victim.net NS
+dig serv3.victim.net ANY
+```
+
+To query the reverse lookup zone use the following commands.
+
+```bash
+dig -x 192.168.2.231
+dig -x @192.168.2.232 192.168.2.233
+```
+
+There are more potion but this should be enough.
+
+### clear cache
+
+Clearing ram is important to get latest update of dns record. Let say the server changed the name of a Record but my cache hasn't been cleared for a while i won't see or be able to use the new hostname.
+If you are using systemd-resolved you can flush you dns caches by doing these commands.
+
+```bash
+sudo resolvectl flush-caches
+sudo resolvectl statistics
+```
+You can look online how to flush your cach if your system is using another tool.
