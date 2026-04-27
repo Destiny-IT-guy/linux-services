@@ -149,6 +149,28 @@ sudo systemctl restart chrony
 chronyc sources -v
 ```
 
-## NTS
+# NTS
 
-I Will add NTS security features this week.
+As you know ntp isn't secure and all traffic it create is unencrypted/unauthenticated. This is a vulnerability that can be a problem in professional environment. To solve this NTS(network time security) was created. IT adds authentication to ensure the packets you receive comes by the desired servers by using NTS-KE to establish secure session keys. For the keys exchange NTS uses tcp and port <b>4460</b>. Afterwards it uses ntp regular port for time synchronization.
+
+Where to deploy NTS? You can deploy only on your edge side so you ony uses NTS to get time from the internet and your internal network continue to use NTP or you can use NTS for both.
+
+## NTS configuration
+
+To get time from the internet securely you will have to add public NTS servers and add them to your configuration files. Here are 2 NTS servers i added.
+
+```bash
+server time.cloudflare.com iburst nts prefer
+server nts.netnod.se iburst nts prefer
+```
+
+The <b><u>prefer</u></b> option select one or sources to a have higher priority than all other sources. also if you have multiple prefer's like me the first to appear in your configuration will take priority even if it has a worse connection so make sure your best NTS connection is on top.
+
+To ensure it works and that its using NTS instead of NTP I like to use 2 commands. the first one is to ensure that im able to establish a tcp connection with the designated NTS server and the seconds is to look thru the logs.
+
+```bash
+nc -zv time.cloudflare.com 4460
+sudo journalctl -u ntpsec | grep -i NTS
+```
+
+## complete NTS
