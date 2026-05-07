@@ -124,4 +124,99 @@ I will do this another day. both ways.
 
 ### <u>sshd_config</u>
 
-I will complete this tomorrow
+As I said before, this configuration file is used to defined rules for incoming ssh request. Like the other, this file has a manuel (`man sshd_config`) but I will show and briefly explain some basics option you might want to use.
+
+
+```bash
+# Enable legacy support for Cisco IOS
+KexAlgorithms +diffie-hellman-group14-sha1,diffie-hellman-group1-sha1
+Ciphers +aes128-cbc,aes256-cbc,3des-cbc
+HostKeyAlgorithms +ssh-rsa
+CASignatureAlgorithms +ssh-rsa
+PubkeyAcceptedAlgorithms +ssh-rsa
+
+banner /etc/issue.net # Banner message for ssh connection
+
+# Access
+PermitRootLogin prohibit-password
+AllowUsers test root toto@192.168.2.231 titi # allow users and allow users from specific IP
+AllowGroups admin # when allow users and groups exists users must be in both to obtain access
+# AllowGroups or users with no option locks out everyone
+DenyUsers toto@192.168.1.* # deny ssh connection to toto from 192.168.1.X subnet
+#DenyGroups also exist.
+
+# Authentication
+PermitEmptyPasswords no
+PubkeyAuthentication yes
+PasswordAuthentication yes
+MaxAuthTries 2
+
+# Network options
+Port 2222 
+addressfamily any # inet4 for ipv4, inet6 for ipv6 or any for both
+ListenAddress 192.168.2.232 # binds ssh to a single IP if your server has many IP address.
+
+# rules
+LoginGraceTime 45 # Time in seconds for user to successfully authenticate before disconnection
+ClientAliveInterval 5m # how long of no activity for server to send message to client
+ClientAliveCountMax 3 # how many unanswered it take for ssh session to be terminated.
+
+ChannelTimeout direct-tcpip=5m session=10m # disconnect port forwarding  session if no data has been transferred for 5 min and regular ssh session if no user activity for 10 minutes.
+
+# Additional security
+MaxSessions 5 # limits how many session ssh multiplexing can use 
+MaxStartups 10:50:40 # limit how many unauthenticated connection. It protects against brute force attacks. allows 10 unauth connection, after that any more it will drop 50 percent of connection. when it reaches 40 it drops all unauth connection.
+IgnoreRhosts yes
+
+
+# LOG
+#SyslogFacility AUTHPRIV
+#LogLevel VERBOSE
+```
+
+Here is some common rules I might to add to my sshd config file. After modifying the file restart ssh to apply these options.
+
+## SSH tunneling
+
+SSH tunneling redirect network traffic through a encrypted ssh session. It allows users to access privates services that are behind firewall more securely. But they can cause a big security vulnerability in a network if not properly used. I will briefly show 3 types of tunneling but others exist like agent forwarding and X11 forwarding.
+
+### <u>local port forwarding</u>
+
+local port forwarding works by redirecting traffic from a single port on your local machine thru ssh session to access a specif port on the other machine. Let say I want to access a server web page but its firewall only allows incoming traffic from its ssh port (2222). I would use the following command. 
+
+```bash
+ssh -L 8008:localhost:443 <username>@<IP> -p 2222
+```
+
+The first port is where my local traffic will go. The localhost right after is the localhost of the machine im going to ssh into. the following port is the service im trying to access.</br>
+With this i will be able to access my remote server web interface via my https://localhost:8008.</br></br>Let say I want to access my pfsense web interface but my IP is blocked but my remote linux server is allowed. This is the command I will use.
+
+```bash
+ssh -L 8080:<Pfsense-IP>:443 <username>@<IP> -p 2222
+```
+
+With this my remote server will act as a relay between pfsense and my local machine. My local host traffic on my port 8080 will go thru my remote server ssh port 2222 to then finally arrives to pfsense web interface, the packets it receive will see the remote linux server as senders IP address instead of my local machine. To access it via a browser I would use the  url https://localhost:8080.
+
+### <u>Reverse port forwarding</u>
+
+This can be considered as the opposite of local port forwarding. It allows remote servers to access a service on my local machine that might usually might not be accessible because its behind a firewall/NAT. Let say im running a database on my local machine and I want a remote server on the cloud or behind a public IP/Nat that is running prometheus/grafana to have access to that service. If the remote server is reachable and ssh enable I will be able to create a tunnel between my machine and remote server. Here is an example of how to use the command.
+
+```bash
+# ssh -R <Remote_port>:localhost:<local_port> <username>@<IP>
+ssh -R 8080:localhost:3601 <username>@<IP> -p 2222
+```
+
+This will forward traffic from remote server port 8080 to the ssh tunnel to my local machine 3601 port. The localhost in the command refers to my local machine here instead of remote servers localhost. To access the SQL service
+the remote server would use `localhost:8080 or 127.0.0.1:8080`.</br>
+Like -L option, the reverse port forwarding can act as a relay for another service running on another machine on my local network. Let say my local machine is .2.200 but my sql service is running on .2.250. This would be the command I use.
+
+```bash
+ssh -R 8080:192.168.2.250:3601 <username>@<IP> -p 2222
+```
+
+### <u>Dynamic port forwarding</u>
+
+
+
+
+## ssh multiplexing
